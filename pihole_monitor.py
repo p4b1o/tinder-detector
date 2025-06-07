@@ -7,10 +7,15 @@ from typing import Dict, Set
 
 import requests
 
-LOG_PATH = '/var/log/pihole.log'
+LOG_PATH = '/var/log/pihole/pihole.log'
 STATE_PATH = '/var/tmp/pihole_monitor_state.json'
 TARGET_DOMAINS = ['tinder.com', 'badoo.com', 'sympatia.pl']
 LOG_PATTERN = re.compile(r"query\[[^\]]+\]\s+(?P<domain>\S+)\s+from\s+(?P<ip>\S+)")
+
+MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY')
+MAILGUN_DOMAIN = os.getenv('MAILGUN_DOMAIN')
+MAILGUN_FROM = os.getenv('MAILGUN_FROM')
+MAILGUN_TO = os.getenv('MAILGUN_TO')
 
 def load_state(path: str) -> Dict:
     if os.path.exists(path):
@@ -28,10 +33,10 @@ def save_state(path: str, state: Dict) -> None:
     os.replace(tmp_path, path)
 
 def send_mail(domain: str, ip: str, raw_domain: str, debug: bool = False) -> None:
-    api_key = os.getenv('MAILGUN_API_KEY')
-    mg_domain = os.getenv('MAILGUN_DOMAIN')
-    from_addr = os.getenv('MAILGUN_FROM')
-    to_addr = os.getenv('MAILGUN_TO')
+    api_key = MAILGUN_API_KEY
+    mg_domain = MAILGUN_DOMAIN
+    from_addr = MAILGUN_FROM
+    to_addr = MAILGUN_TO
     if not all([api_key, mg_domain, from_addr, to_addr]):
         if debug:
             print('Mailgun environment variables not fully configured')
