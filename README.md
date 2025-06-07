@@ -11,7 +11,9 @@ pip install --user requests  # tylko przy pierwszym użyciu
 python3 pihole_monitor.py [-d]
 ```
 
-Przełącznik `-d` lub `--debug` wyświetla dodatkowe informacje diagnostyczne.
+Tryb debugowania (`-d` lub `--debug`) wyświetla jedynie istotne zdarzenia
+(np. wykryte zapytania i odpowiedzi Mailguna), pomijając pełne linie z
+`pihole.log`.
 
 Dane logowania do Mailguna można podać w pliku `tinder-detector.conf` lub w
 następujących zmiennych środowiskowych:
