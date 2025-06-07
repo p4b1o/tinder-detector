@@ -27,7 +27,9 @@ _cfg = load_config(CONFIG_PATH)
 LOG_PATH = '/var/log/pihole/pihole.log'
 STATE_PATH = '/var/tmp/pihole_monitor_state.json'
 TARGET_DOMAINS = ['tinder.com', 'badoo.com', 'sympatia.pl']
-LOG_PATTERN = re.compile(r"query\[[^\]]+\]\s+(?P<domain>\S+)\s+from\s+(?P<ip>\S+)")
+LOG_PATTERN = re.compile(
+    r"^(?P<time>\w+\s+\d+\s+\d+:\d+:\d+).*?query\[[^\]]+\]\s+(?P<domain>\S+)\s+from\s+(?P<ip>\S+)"
+)
 
 MAILGUN_API_KEY = _cfg.get('api_key') or os.getenv('MAILGUN_API_KEY')
 MAILGUN_DOMAIN = _cfg.get('mg_domain') or os.getenv('MAILGUN_DOMAIN')
@@ -50,7 +52,7 @@ def save_state(path: str, state: Dict) -> None:
         json.dump(state, f)
     os.replace(tmp_path, path)
 
-def send_mail(domain: str, ip: str, raw_domain: str, debug: bool = False) -> bool:
+def send_mail(domain: str, ip: str, raw_domain: str, event_time: str, debug: bool = False) -> bool:
     api_key = MAILGUN_API_KEY
     mg_domain = MAILGUN_DOMAIN
     from_addr = MAILGUN_FROM
@@ -59,8 +61,14 @@ def send_mail(domain: str, ip: str, raw_domain: str, debug: bool = False) -> boo
         if debug:
             print('Mailgun configuration not fully set')
         return False
-    subject = f'Pi-hole detection: {raw_domain} from {ip}'
-    text = f'Domain: {raw_domain}\nClient IP: {ip}\nMatched pattern: {domain}'
+    subject = f'Wykryto domenę {raw_domain} z adresu {ip} o {event_time}'
+    text = (
+        f'Wykryta domena: {raw_domain}\n'
+        f'Adres IP klienta: {ip}\n'
+        f'Czas odwołania: {event_time}\n'
+        f'Oznacza to, że adres IP {ip} poszukiwał domeny {raw_domain}.\n'
+        f'Dopasowany wzorzec: {domain}'
+    )
     if debug:
         print('Sending email:', subject)
     try:
@@ -110,12 +118,13 @@ def process_log(debug: bool = False) -> None:
                 continue
             raw_domain = m.group('domain').lower()
             ip = m.group('ip')
+            event_time = m.group('time')
             for target in TARGET_DOMAINS:
                 if raw_domain == target or raw_domain.endswith('.' + target):
                     if debug:
                         print('Match:', raw_domain, 'from', ip)
                     if ip not in seen or target not in seen[ip]:
-                        if send_mail(target, ip, raw_domain, debug):
+                        if send_mail(target, ip, raw_domain, event_time, debug):
                             seen.setdefault(ip, set()).add(target)
                         elif debug:
                             print('Notification not sent for', raw_domain, 'from', ip)

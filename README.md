@@ -3,6 +3,7 @@
 To repozytorium zawiera prosty skrypt do monitorowania instancji Pi-hole w poszukiwaniu zapytań DNS do wybranych serwisów randkowych (`tinder.com`, `badoo.com`, `sympatia.pl`).
 
 Skrypt `pihole_monitor.py` odczytuje jedynie nowe linie z `/var/log/pihole/pihole.log` od poprzedniego uruchomienia i wysyła powiadomienia przez Mailgun, gdy wykryje nowe IP klienta pytające o jedną z tych domen. Stan jest zapisywany w `/var/tmp/pihole_monitor_state.json`.
+Temat oraz treść wysyłanych e‑maili zawierają wykrytą domenę, adres IP klienta oraz czas ostatniego zapytania.
 
 ## Użycie
 
