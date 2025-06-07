@@ -102,8 +102,8 @@ def process_log(debug: bool = False) -> None:
             offset = 0  # log rotated
         f.seek(offset)
         for line in f:
-            if debug:
-                print('LINE:', line.strip())
+            # Print only relevant events in debug mode, not full log lines
+            # to avoid cluttering the output with raw log contents.
             m = LOG_PATTERN.search(line)
             if not m:
                 continue
@@ -111,6 +111,8 @@ def process_log(debug: bool = False) -> None:
             ip = m.group('ip')
             for target in TARGET_DOMAINS:
                 if raw_domain == target or raw_domain.endswith('.' + target):
+                    if debug:
+                        print('Match:', raw_domain, 'from', ip)
                     if ip not in seen or target not in seen[ip]:
                         if send_mail(target, ip, raw_domain, debug):
                             seen.setdefault(ip, set()).add(target)
