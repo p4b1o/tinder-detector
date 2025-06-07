@@ -1,0 +1,7 @@
+# Skopiuj ten plik do 'tinder-detector.conf' i uzupelnij wartosci
+# danych logowania do Mailguna.
+
+api_key = MAILGUN_API_KEY
+mg_domain = MAILGUN_DOMAIN
+from_addr = MAILGUN_FROM
+to_addr = MAILGUN_TO

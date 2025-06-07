@@ -7,15 +7,32 @@ from typing import Dict, Set
 
 import requests
 
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'tinder-detector.conf')
+
+def load_config(path: str) -> Dict[str, str]:
+    config: Dict[str, str] = {}
+    if os.path.exists(path):
+        with open(path, 'r') as cfg:
+            for line in cfg:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    config[key.strip()] = value.strip()
+    return config
+
+_cfg = load_config(CONFIG_PATH)
+
 LOG_PATH = '/var/log/pihole/pihole.log'
 STATE_PATH = '/var/tmp/pihole_monitor_state.json'
 TARGET_DOMAINS = ['tinder.com', 'badoo.com', 'sympatia.pl']
 LOG_PATTERN = re.compile(r"query\[[^\]]+\]\s+(?P<domain>\S+)\s+from\s+(?P<ip>\S+)")
 
-MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY')
-MAILGUN_DOMAIN = os.getenv('MAILGUN_DOMAIN')
-MAILGUN_FROM = os.getenv('MAILGUN_FROM')
-MAILGUN_TO = os.getenv('MAILGUN_TO')
+MAILGUN_API_KEY = _cfg.get('api_key') or os.getenv('MAILGUN_API_KEY')
+MAILGUN_DOMAIN = _cfg.get('mg_domain') or os.getenv('MAILGUN_DOMAIN')
+MAILGUN_FROM = _cfg.get('from_addr') or os.getenv('MAILGUN_FROM')
+MAILGUN_TO = _cfg.get('to_addr') or os.getenv('MAILGUN_TO')
 
 def load_state(path: str) -> Dict:
     if os.path.exists(path):
@@ -39,7 +56,7 @@ def send_mail(domain: str, ip: str, raw_domain: str, debug: bool = False) -> Non
     to_addr = MAILGUN_TO
     if not all([api_key, mg_domain, from_addr, to_addr]):
         if debug:
-            print('Mailgun environment variables not fully configured')
+            print('Mailgun configuration not fully set')
         return
     subject = f'Pi-hole detection: {raw_domain} from {ip}'
     text = f'Domain: {raw_domain}\nClient IP: {ip}\nMatched pattern: {domain}'

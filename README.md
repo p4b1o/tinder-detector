@@ -13,11 +13,15 @@ python3 pihole_monitor.py [-d]
 
 Przełącznik `-d` lub `--debug` wyświetla dodatkowe informacje diagnostyczne.
 
-Dane logowania do Mailguna należy podać w następujących zmiennych środowiskowych:
+Dane logowania do Mailguna można podać w pliku `tinder-detector.conf` lub w
+następujących zmiennych środowiskowych:
 
 - `MAILGUN_API_KEY`
 - `MAILGUN_DOMAIN`
 - `MAILGUN_FROM`
 - `MAILGUN_TO`
+
+Przykładowy plik konfiguracyjny znajduje się w `tinder-detector.conf.sample`.
+Po instalacji skopiuj go do `tinder-detector.conf` i uzupełnij wartości.
 
 Skrypt jest lekki i może być uruchamiany okresowo z crona.
