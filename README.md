@@ -34,3 +34,21 @@ Przykładowy plik konfiguracyjny znajduje się w `tinder-detector.conf.sample`.
 Po instalacji skopiuj go do `tinder-detector.conf` i uzupełnij wartości.
 
 Skrypt jest lekki i może być uruchamiany okresowo z crona.
+
+## Automatyczne uruchamianie (cron)
+
+Aby skrypt uruchamiał się co 5 minut na instalacji Pi-hole, dodaj go do crontaba użytkownika `root` (lub innego, który ma dostęp do `pihole.log`).
+
+Edytuj crontab poleceniem:
+
+```bash
+sudo crontab -e
+```
+
+Na końcu pliku dopisz linię (aktualizując ścieżkę do skryptu):
+
+```cron
+*/5 * * * * /usr/bin/python3 /sciezka/do/tinder-detector/pihole_monitor.py
+```
+
+Po zapisaniu pliku cron będzie uruchamiał skrypt automatycznie co 5 minut. Upewnij się, że konfiguracja Mailguna w `tinder-detector.conf` lub zmiennych środowiskowych jest prawidłowa.
