@@ -20,8 +20,14 @@ następujących zmiennych środowiskowych:
 
 - `MAILGUN_API_KEY`
 - `MAILGUN_DOMAIN`
+- `MAILGUN_API_URL` (domyślnie `https://api.mailgun.net`)
 - `MAILGUN_FROM`
 - `MAILGUN_TO`
+
+Mailgun udostępnia dwa regiony API: US (domyślny) i EU.
+Odpowiednie adresy to `https://api.mailgun.net` oraz
+`https://api.eu.mailgun.net`. W pliku konfiguracyjnym (`api_url`) lub w
+zmiennej `MAILGUN_API_URL` możesz wybrać region EU.
 
 Przykładowy plik konfiguracyjny znajduje się w `tinder-detector.conf.sample`.
 Po instalacji skopiuj go do `tinder-detector.conf` i uzupełnij wartości.

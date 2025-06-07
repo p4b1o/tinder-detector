@@ -31,6 +31,7 @@ LOG_PATTERN = re.compile(r"query\[[^\]]+\]\s+(?P<domain>\S+)\s+from\s+(?P<ip>\S+
 
 MAILGUN_API_KEY = _cfg.get('api_key') or os.getenv('MAILGUN_API_KEY')
 MAILGUN_DOMAIN = _cfg.get('mg_domain') or os.getenv('MAILGUN_DOMAIN')
+MAILGUN_API_URL = _cfg.get('api_url') or os.getenv('MAILGUN_API_URL', 'https://api.mailgun.net')
 MAILGUN_FROM = _cfg.get('from_addr') or os.getenv('MAILGUN_FROM')
 MAILGUN_TO = _cfg.get('to_addr') or os.getenv('MAILGUN_TO')
 
@@ -64,7 +65,7 @@ def send_mail(domain: str, ip: str, raw_domain: str, debug: bool = False) -> boo
         print('Sending email:', subject)
     try:
         resp = requests.post(
-            f'https://api.mailgun.net/v3/{mg_domain}/messages',
+            f'{MAILGUN_API_URL}/v3/{mg_domain}/messages',
             auth=('api', api_key),
             data={
                 'from': from_addr,
