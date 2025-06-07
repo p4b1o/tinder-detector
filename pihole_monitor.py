@@ -49,7 +49,7 @@ def save_state(path: str, state: Dict) -> None:
         json.dump(state, f)
     os.replace(tmp_path, path)
 
-def send_mail(domain: str, ip: str, raw_domain: str, debug: bool = False) -> None:
+def send_mail(domain: str, ip: str, raw_domain: str, debug: bool = False) -> bool:
     api_key = MAILGUN_API_KEY
     mg_domain = MAILGUN_DOMAIN
     from_addr = MAILGUN_FROM
@@ -57,7 +57,7 @@ def send_mail(domain: str, ip: str, raw_domain: str, debug: bool = False) -> Non
     if not all([api_key, mg_domain, from_addr, to_addr]):
         if debug:
             print('Mailgun configuration not fully set')
-        return
+        return False
     subject = f'Pi-hole detection: {raw_domain} from {ip}'
     text = f'Domain: {raw_domain}\nClient IP: {ip}\nMatched pattern: {domain}'
     if debug:
@@ -76,9 +76,12 @@ def send_mail(domain: str, ip: str, raw_domain: str, debug: bool = False) -> Non
         )
         if debug:
             print('Mailgun response:', resp.status_code, resp.text)
-    except Exception as e:
+        resp.raise_for_status()
+        return True
+    except requests.RequestException as e:
         if debug:
             print('Failed to send email:', e)
+        return False
 
 def process_log(debug: bool = False) -> None:
     state = load_state(STATE_PATH)
@@ -109,8 +112,10 @@ def process_log(debug: bool = False) -> None:
             for target in TARGET_DOMAINS:
                 if raw_domain == target or raw_domain.endswith('.' + target):
                     if ip not in seen or target not in seen[ip]:
-                        send_mail(target, ip, raw_domain, debug)
-                        seen.setdefault(ip, set()).add(target)
+                        if send_mail(target, ip, raw_domain, debug):
+                            seen.setdefault(ip, set()).add(target)
+                        elif debug:
+                            print('Notification not sent for', raw_domain, 'from', ip)
         new_offset = f.tell()
 
     state = {
