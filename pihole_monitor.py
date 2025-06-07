@@ -7,6 +7,11 @@ from typing import Dict, Set
 
 import requests
 
+# Ensure the working directory is the script's directory so that relative
+# paths (like the configuration file) resolve correctly when the script is
+# run from cron or other automated jobs.
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'tinder-detector.conf')
 
 def load_config(path: str) -> Dict[str, str]:
