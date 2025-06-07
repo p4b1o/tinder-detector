@@ -1,23 +1,23 @@
 # tinder-detector
 
-This repository contains a simple script for monitoring a Pi-hole instance for DNS queries to selected dating domains (`tinder.com`, `badoo.com`, `sympatia.pl`).
+To repozytorium zawiera prosty skrypt do monitorowania instancji Pi-hole w poszukiwaniu zapytań DNS do wybranych serwisów randkowych (`tinder.com`, `badoo.com`, `sympatia.pl`).
 
-The script `pihole_monitor.py` reads only new lines from `/var/log/pihole.log` since the previous run and sends notifications via Mailgun when a new client IP is detected querying one of these domains. State is stored in `/var/tmp/pihole_monitor_state.json`.
+Skrypt `pihole_monitor.py` odczytuje jedynie nowe linie z `/var/log/pihole/pihole.log` od poprzedniego uruchomienia i wysyła powiadomienia przez Mailgun, gdy wykryje nowe IP klienta pytające o jedną z tych domen. Stan jest zapisywany w `/var/tmp/pihole_monitor_state.json`.
 
-## Usage
+## Użycie
 
 ```bash
-pip install --user requests  # first time only
+pip install --user requests  # tylko przy pierwszym użyciu
 python3 pihole_monitor.py [-d]
 ```
 
-Use the `-d` or `--debug` flag to print additional debugging information.
+Przełącznik `-d` lub `--debug` wyświetla dodatkowe informacje diagnostyczne.
 
-Mailgun API credentials must be provided via the following environment variables:
+Dane logowania do Mailguna należy podać w następujących zmiennych środowiskowych:
 
 - `MAILGUN_API_KEY`
 - `MAILGUN_DOMAIN`
 - `MAILGUN_FROM`
 - `MAILGUN_TO`
 
-The script is designed to be lightweight and can be scheduled via cron for periodic monitoring.
+Skrypt jest lekki i może być uruchamiany okresowo z crona.
