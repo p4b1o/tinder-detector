@@ -4,6 +4,7 @@ To repozytorium zawiera prosty skrypt do monitorowania instancji Pi-hole w poszu
 
 Skrypt `pihole_monitor.py` odczytuje jedynie nowe linie z `/var/log/pihole/pihole.log` od poprzedniego uruchomienia i wysyła powiadomienia przez Mailgun, gdy wykryje nowe IP klienta pytające o jedną z tych domen. Stan jest zapisywany w `/var/tmp/pihole_monitor_state.json`.
 Temat oraz treść wysyłanych e‑maili zawierają wykrytą domenę, adres IP klienta oraz czas ostatniego zapytania.
+Powiadomienia wysyłane są nie częściej niż raz na 30 minut dla danej kombinacji adresu IP i domeny. Każdy e‑mail zawiera listę wszystkich odwołań z tego okresu.
 
 ## Użycie
 
@@ -33,7 +34,9 @@ zmiennej `MAILGUN_API_URL` możesz wybrać region EU.
 Przykładowy plik konfiguracyjny znajduje się w `tinder-detector.conf.sample`.
 Po instalacji skopiuj go do `tinder-detector.conf` i uzupełnij wartości.
 
-Skrypt jest lekki i może być uruchamiany okresowo z crona.
+Skrypt jest lekki i może być uruchamiany okresowo z crona. Przy starcie
+zmienia katalog roboczy na ten, w którym się znajduje, dzięki czemu plik
+`tinder-detector.conf` jest poprawnie znajdowany nawet w zadaniach cron.
 
 ## Automatyczne uruchamianie (cron)
 

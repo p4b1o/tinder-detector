@@ -3,9 +3,15 @@ import json
 import os
 import re
 import sys
-from typing import Dict, Set
+from typing import Dict, List, Tuple
+import time
 
 import requests
+
+# Ensure the working directory is the script's directory so that relative
+# paths (like the configuration file) resolve correctly when the script is
+# run from cron or other automated jobs.
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'tinder-detector.conf')
 
@@ -27,6 +33,7 @@ _cfg = load_config(CONFIG_PATH)
 LOG_PATH = '/var/log/pihole/pihole.log'
 STATE_PATH = '/var/tmp/pihole_monitor_state.json'
 TARGET_DOMAINS = ['tinder.com', 'badoo.com', 'sympatia.pl']
+EMAIL_INTERVAL = 30 * 60  # 30 minutes
 LOG_PATTERN = re.compile(
     r"^(?P<time>\w+\s+\d+\s+\d+:\d+:\d+).*?query\[[^\]]+\]\s+(?P<domain>\S+)\s+from\s+(?P<ip>\S+)"
 )
@@ -52,7 +59,7 @@ def save_state(path: str, state: Dict) -> None:
         json.dump(state, f)
     os.replace(tmp_path, path)
 
-def send_mail(domain: str, ip: str, raw_domain: str, event_time: str, debug: bool = False) -> bool:
+def send_mail(domain: str, ip: str, events: List[Tuple[str, str]], debug: bool = False) -> bool:
     api_key = MAILGUN_API_KEY
     mg_domain = MAILGUN_DOMAIN
     from_addr = MAILGUN_FROM
@@ -61,13 +68,15 @@ def send_mail(domain: str, ip: str, raw_domain: str, event_time: str, debug: boo
         if debug:
             print('Mailgun configuration not fully set')
         return False
-    subject = f'Wykryto domenę {raw_domain} z adresu {ip} o {event_time}'
+    if not events:
+        return True
+    subject = f'Wykryto {len(events)} odwo\u0142a\u0144 do domeny {domain} z adresu {ip}'
+    lines = [
+        f"{idx}. {raw} o {ts}" for idx, (raw, ts) in enumerate(events, 1)
+    ]
     text = (
-        f'Wykryta domena: {raw_domain}\n'
-        f'Adres IP klienta: {ip}\n'
-        f'Czas odwołania: {event_time}\n'
-        f'Oznacza to, że adres IP {ip} poszukiwał domeny {raw_domain}.\n'
-        f'Dopasowany wzorzec: {domain}'
+        f"Wykryte odwo\u0142ania do domeny {domain} z adresu {ip}:\n" +
+        "\n".join(lines)
     )
     if debug:
         print('Sending email:', subject)
@@ -95,7 +104,8 @@ def send_mail(domain: str, ip: str, raw_domain: str, event_time: str, debug: boo
 def process_log(debug: bool = False) -> None:
     state = load_state(STATE_PATH)
     offset = state.get('offset', 0)
-    seen: Dict[str, Set[str]] = {k: set(v) for k, v in state.get('seen', {}).items()}
+    last_sent: Dict[str, Dict[str, float]] = state.get('last_sent', {})
+    pending: Dict[str, Dict[str, List[Tuple[str, str]]]] = state.get('pending', {})
 
     try:
         f = open(LOG_PATH, 'r')
@@ -123,16 +133,27 @@ def process_log(debug: bool = False) -> None:
                 if raw_domain == target or raw_domain.endswith('.' + target):
                     if debug:
                         print('Match:', raw_domain, 'from', ip)
-                    if ip not in seen or target not in seen[ip]:
-                        if send_mail(target, ip, raw_domain, event_time, debug):
-                            seen.setdefault(ip, set()).add(target)
-                        elif debug:
-                            print('Notification not sent for', raw_domain, 'from', ip)
+                    pending.setdefault(ip, {}).setdefault(target, []).append((raw_domain, event_time))
         new_offset = f.tell()
+
+    now = time.time()
+    for ip, domains in list(pending.items()):
+        for domain, events in list(domains.items()):
+            last = last_sent.get(ip, {}).get(domain, 0)
+            if events and now - last >= EMAIL_INTERVAL:
+                if send_mail(domain, ip, events, debug):
+                    pending[ip][domain] = []
+                    last_sent.setdefault(ip, {})[domain] = now
+                elif debug:
+                    print('Notification not sent for', domain, 'from', ip)
+        pending[ip] = {d: ev for d, ev in domains.items() if ev}
+        if not pending[ip]:
+            pending.pop(ip, None)
 
     state = {
         'offset': new_offset,
-        'seen': {k: list(v) for k, v in seen.items()},
+        'last_sent': last_sent,
+        'pending': pending,
     }
     save_state(STATE_PATH, state)
     if debug:
